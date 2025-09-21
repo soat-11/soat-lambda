@@ -11,5 +11,6 @@ export async function getCognitoConfig() {
   return {
     userPoolId: userPoolParam.Parameter?.Value!,
     appClientId: appClientParam.Parameter?.Value!,
+    region: process.env.AWS_REGION || "us-east-1",
   };
 }

@@ -2,6 +2,7 @@ import { APIGatewayProxyHandler } from "aws-lambda";
 import { CognitoUserPool, CognitoUserAttribute } from "amazon-cognito-identity-js";
 import { getCognitoConfig } from "../utils/get-cognito-config";
 
+
 const passwordDefault = "SoatChallenge#01";
 
 export const handler: APIGatewayProxyHandler = async (event) => {
@@ -25,7 +26,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     ];
 
     await new Promise<void>((resolve, reject) => {
-      userPool.signUp(cpf, "SoatChallenge#01", attributes, [], (err) => {
+      userPool.signUp(cpf, passwordDefault, attributes, [], (err) => {
         if (err) return reject(err);
         resolve();
       });
