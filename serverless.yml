@@ -1,0 +1,23 @@
+service: soat-lambda
+
+plugins:
+  - serverless-offline
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: us-east-1
+
+functions:
+  signup:
+    handler: dist/functions/signup.handler
+    events:
+      - http:
+          path: signup
+          method: post
+  login:
+    handler: dist/functions/login.handler
+    events:
+      - http:
+          path: login
+          method: post

@@ -1,0 +1,27 @@
+{
+  "name": "soat-lambda-1",
+  "version": "1.0.0",
+  "description": "<!-- title: 'AWS NodeJS Example' description: 'This template demonstrates how to deploy a simple NodeJS function running on AWS Lambda using the Serverless Framework.' layout: Doc framework: v4 platform: AWS language: nodeJS priority: 1 authorLink: 'https://github.com/serverless' authorName: 'Serverless, Inc.' authorAvatar: 'https://avatars1.githubusercontent.com/u/13742415?s=200&v=4' -->",
+  "main": "handler.js",
+  "scripts": {
+    "build": "tsc",
+    "offline": "npm run build && serverless offline",
+    "prebuild": "rm -rf ./dist && rm -rf functions.zip",
+    "postbuild": "mkdir lambda-build/ && cp -r dist/* lambda-build/ && cp package.json package-lock.json lambda-build/ && cd lambda-build && npm install --production && zip -r ../functions.zip . && cd .. && rm -rf lambda-build"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.152",
+    "@types/node": "^24.5.2",
+    "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "@aws-sdk/client-ssm": "^3.893.0",
+    "amazon-cognito-identity-js": "^6.3.15",
+    "aws-lambda": "^1.0.7",
+    "serverless": "^4.19.1",
+    "serverless-offline": "^14.4.0"
+  }
+}
