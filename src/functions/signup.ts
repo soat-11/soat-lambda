@@ -17,6 +17,14 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       };
     }
 
+    const cpfClean = cpf.replace(/\D/g, "");
+    if (cpfClean.length !== 11) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ message: "CPF inválido" }),
+      };
+    }
+
     const { userPoolId, appClientId } = await getCognitoConfig();
     const userPool = new CognitoUserPool({ UserPoolId: userPoolId, ClientId: appClientId });
 
@@ -26,7 +34,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     ];
 
     await new Promise<void>((resolve, reject) => {
-      userPool.signUp(cpf, passwordDefault, attributes, [], (err) => {
+      userPool.signUp(cpfClean, passwordDefault, attributes, [], (err) => {
         if (err) return reject(err);
         resolve();
       });
