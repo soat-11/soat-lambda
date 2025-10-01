@@ -1,53 +1,26 @@
 import { APIGatewayProxyHandler } from "aws-lambda";
-import { CognitoUserPool, CognitoUserAttribute } from "amazon-cognito-identity-js";
 import { getCognitoConfig } from "../utils/get-cognito-config";
-
-
-const passwordDefault = "SoatChallenge#01";
+import { CognitoService } from "../services/CognitoService";
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
     const body = JSON.parse(event.body || "{}");
-    const { name, email, cpf } = body;
+    const { nome, email, cpf } = body;
 
-    if (!name || !email || !cpf) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ message: `Todos os campos são obrigatórios, ${name + email + cpf}` }),
-      };
+    if (!nome || !email || !cpf) {
+      return { statusCode: 400, body: JSON.stringify({ message: "Todos os campos são obrigatórios" }) };
     }
 
-    const cpfClean = cpf.replace(/\D/g, "");
-    if (cpfClean.length !== 11) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ message: "CPF inválido" }),
-      };
-    }
+    const { region, userPoolId, appClientId } = await getCognitoConfig();
+    const service = new CognitoService(region, userPoolId, appClientId);
 
-    const { userPoolId, appClientId } = await getCognitoConfig();
-    const userPool = new CognitoUserPool({ UserPoolId: userPoolId, ClientId: appClientId });
-
-    const attributes = [
-      new CognitoUserAttribute({ Name: "name", Value: name }),
-      new CognitoUserAttribute({ Name: "email", Value: email }),
-    ];
-
-    await new Promise<void>((resolve, reject) => {
-      userPool.signUp(cpfClean, passwordDefault, attributes, [], (err) => {
-        if (err) return reject(err);
-        resolve();
-      });
-    });
+    const result = await service.signUp({ nome, email, cpf: cpf.replace(/\D/g, "") });
 
     return {
-      statusCode: 200,
-      body: JSON.stringify({ message: "Usuário cadastrado com sucesso" }),
+      statusCode: result.success ? 200 : 400,
+      body: JSON.stringify(result),
     };
   } catch (error: any) {
-    return {
-      statusCode: 400,
-      body: JSON.stringify({ message: "Erro no cadastro", error: error.message, payload: event.body }),
-    };
+    return { statusCode: 500, body: JSON.stringify({ message: "Erro no cadastro", error: error.message }) };
   }
 };

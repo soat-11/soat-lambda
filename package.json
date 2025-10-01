@@ -18,7 +18,7 @@
     "typescript": "^5.9.2"
   },
   "dependencies": {
-    "@aws-sdk/client-cognito-identity-provider": "^3.893.0",
+    "@aws-sdk/client-cognito-identity-provider": "^3.899.0",
     "@aws-sdk/client-ssm": "^3.893.0",
     "amazon-cognito-identity-js": "^6.3.15",
     "aws-lambda": "^1.0.7",
