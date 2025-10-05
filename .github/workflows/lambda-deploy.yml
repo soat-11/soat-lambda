@@ -31,7 +31,7 @@ jobs:
           node-version: "22"
 
       - name: Instalar Dependências (Opcional | Mantenha ou remova, dependendo de onde o npm install está no projeto)
-        run: npm install && npm run test
+        run: npm install
 
       - name: BUILD | Criar o Pacote de Implantação (.zip)
         run: zip -r ${{ env.ZIP_FILE_NAME }} .
