@@ -9,9 +9,9 @@ import {
 const passwordDefault = "SoatChallenge#01";
 
 interface UsuarioDto {
-  nome: string;
+  name: string;
   email: string;
-  cpf: string;
+  documentNumber: string;
 }
 
 interface TokenDto {
@@ -34,26 +34,26 @@ export class CognitoService {
   // SignUp
   // -------------------
   async signUp(user: UsuarioDto) {
-    const exists = await this.userExists(user.cpf);
+    const exists = await this.userExists(user.documentNumber);
     if (exists) {
       return { success: false, message: "Usuário já cadastrado. Por favor, tente autenticar." };
     }
-
+    
     await this.client.send(
       new SignUpCommand({
         ClientId: this.clientId,
-        Username: user.cpf,
+        Username: user.documentNumber,
         Password: passwordDefault,
         UserAttributes: [
           { Name: "email", Value: user.email },
-          { Name: "name", Value: user.nome },
+          { Name: "name", Value: user.name },
         ],
       })
     );
 
     await this.client.send(
       new AdminConfirmSignUpCommand({
-        Username: user.cpf,
+        Username: user.documentNumber,
         UserPoolId: this.userPoolId,
       })
     );
@@ -64,11 +64,11 @@ export class CognitoService {
   // -------------------
   // Verifica se usuário já existe
   // -------------------
-  private async userExists(cpf: string): Promise<boolean> {
+  private async userExists(documentNumber: string): Promise<boolean> {
     try {
       await this.client.send(
         new AdminGetUserCommand({
-          Username: cpf,
+          Username: documentNumber,
           UserPoolId: this.userPoolId,
         })
       );
@@ -82,7 +82,7 @@ export class CognitoService {
   // -------------------
   // SignIn
   // -------------------
-  async signIn(cpf: string): Promise<{ success: boolean; token?: TokenDto; message?: string }> {
+  async signIn(documentNumber: string): Promise<{ success: boolean; token?: TokenDto; message?: string }> {
     try {
       const authResponse = await this.client.send(
         new AdminInitiateAuthCommand({
@@ -90,7 +90,7 @@ export class CognitoService {
           ClientId: this.clientId,
           AuthFlow: "ADMIN_NO_SRP_AUTH",
           AuthParameters: {
-            USERNAME: cpf,
+            USERNAME: documentNumber,
             PASSWORD: passwordDefault,
           },
         })

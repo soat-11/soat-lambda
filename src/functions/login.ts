@@ -6,9 +6,9 @@ import { CognitoService } from "../services/CognitoService";
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
     const body = JSON.parse(event.body || "{}");
-    const { cpf } = body;
+    const { documentNumber } = body;
 
-    if (!cpf) {
+    if (!documentNumber) {
       return {
         statusCode: 400,
         body: JSON.stringify({ message: "CPF é obrigatório" }),
@@ -18,7 +18,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     const { region, userPoolId, appClientId } = await getCognitoConfig();
     const service = new CognitoService(region, userPoolId, appClientId);
 
-    const result = await service.signIn(cpf.replace(/\D/g, ""));
+    const result = await service.signIn(documentNumber.replace(/\D/g, ""));
 
     return {
       statusCode: result.success ? 200 : 400,

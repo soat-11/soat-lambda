@@ -6,8 +6,8 @@
   "scripts": {
     "build": "tsc",
     "offline": "npm run build && serverless offline",
-    "prebuild": "rm -rf ./dist && rm -rf functions.zip",
-    "postbuild": "mkdir lambda-build/ && cp -r dist/* lambda-build/ && cp package.json package-lock.json lambda-build/ && cd lambda-build && npm install --production && zip -r ../functions.zip . && cd .. && rm -rf lambda-build"
+    "prebuild": "rm -rf ./dist && rm -rf lambda.zip",
+    "postbuild": "mkdir lambda-build/ && cp -r dist/* lambda-build/ && cp package.json package-lock.json lambda-build/ && cd lambda-build && npm install --production && zip -r ../lambda.zip . && cd .. && rm -rf lambda-build"
   },
   "keywords": [],
   "author": "",
