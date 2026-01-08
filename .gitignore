@@ -2,3 +2,7 @@ node_modules
 .serverless
 dist
 functions.zip
+coverage
+*.zip
+.env
+.env.local

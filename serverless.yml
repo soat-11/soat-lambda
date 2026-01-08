@@ -10,14 +10,14 @@ provider:
 
 functions:
   signup:
-    handler: dist/functions/signup.handler
+    handler: dist/functions/anonymous-login.handler
     events:
       - http:
-          path: signup
+          path: anonymous-login
           method: post
   login:
-    handler: dist/functions/login.handler
+    handler: dist/functions/signup-and-login.handler
     events:
       - http:
-          path: login
+          path: signup-and-login
           method: post
