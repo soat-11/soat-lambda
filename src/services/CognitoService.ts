@@ -63,7 +63,6 @@ export class CognitoService {
   }
 
    async signUpAnonymousUser(anonymousId: string) {
-
     await this.client.send(
       new SignUpCommand({
         ClientId: this.clientId,
