@@ -5,6 +5,7 @@ import {
   AdminGetUserCommand,
   AdminInitiateAuthCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
+import { randomUUID } from "node:crypto";
 
 const passwordDefault = "SoatChallenge#01";
 
@@ -61,6 +62,29 @@ export class CognitoService {
     return { success: true, message: "Usuário cadastrado com sucesso" };
   }
 
+   async signUpAnonymousUser(anonymousId: string) {
+
+    await this.client.send(
+      new SignUpCommand({
+        ClientId: this.clientId,
+        Username: anonymousId,
+        Password: passwordDefault,
+        UserAttributes: [
+          { Name: "name", Value: 'Visitante' },
+        ],
+      })
+    );
+
+    await this.client.send(
+      new AdminConfirmSignUpCommand({
+        Username: anonymousId,
+        UserPoolId: this.userPoolId,
+      })
+    );
+
+    return { success: true, message: "Usuário anonimo cadastrado com sucesso" };
+  }
+
   // -------------------
   // Verifica se usuário já existe
   // -------------------
@@ -80,9 +104,9 @@ export class CognitoService {
   }
 
   // -------------------
-  // SignIn
+  // Login
   // -------------------
-  async signIn(documentNumber: string): Promise<{ success: boolean; token?: TokenDto; message?: string }> {
+  async login(documentNumber: string): Promise<{ success: boolean; token?: TokenDto; message?: string }> {
     try {
       const authResponse = await this.client.send(
         new AdminInitiateAuthCommand({
