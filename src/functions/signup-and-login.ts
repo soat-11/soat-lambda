@@ -11,7 +11,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     const service = new CognitoService(region, userPoolId, appClientId);
 
     // 1. Criar o usuário no Cognito
-    const result = await service.signUp({ name, email, documentNumber: documentNumber.replace(/\D/g, "") });
+    const result = await service.signUp({ name, email, documentNumber: cpf });
     if (!result.success) {
       throw new Error(result.message);
     }
