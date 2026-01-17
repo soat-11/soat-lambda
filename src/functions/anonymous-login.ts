@@ -13,8 +13,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     // 1. Cria um usuário temporário
     const result = await service.signUpAnonymousUser(anonymousId);
-    if (!result.success) {
-      throw new Error(result.message);
+    if (!result?.success) {
+      throw new Error(result?.message);
     }
 
 
@@ -31,6 +31,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       }),
     };
   } catch (error: any) {
+    console.error("Erro no login anônimo:", error.message, error.name);
     return { statusCode: 500, body: JSON.stringify({ message: "Erro no login anônimo", error: error.message }) };
   }
 };
