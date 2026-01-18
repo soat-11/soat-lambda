@@ -35,7 +35,8 @@ export class CognitoService {
   // SignUp
   // -------------------
   async signUp(user: UsuarioDto) {
-    const exists = await this.userExists(user.documentNumber);
+    try {
+      const exists = await this.userExists(user.documentNumber);
     if (exists) {
       return { success: false, message: "Usuário já cadastrado. Por favor, tente autenticar." };
     }
@@ -43,7 +44,7 @@ export class CognitoService {
     await this.client.send(
       new SignUpCommand({
         ClientId: this.clientId,
-        Username: user.documentNumber,
+        Username: user.documentNumber,        
         Password: passwordDefault,
         UserAttributes: [
           { Name: "email", Value: user.email },
@@ -60,10 +61,16 @@ export class CognitoService {
     );
 
     return { success: true, message: "Usuário cadastrado com sucesso" };
+    } catch (error: any) {
+      console.error("signUp", error.name, error.message);
+      throw error;
+    }
+    
   }
 
    async signUpAnonymousUser(anonymousId: string) {
-    await this.client.send(
+    try {
+       await this.client.send(
       new SignUpCommand({
         ClientId: this.clientId,
         Username: anonymousId,
@@ -82,6 +89,10 @@ export class CognitoService {
     );
 
     return { success: true, message: "Usuário anonimo cadastrado com sucesso" };
+    } catch (error) { 
+      console.error("signUpAnonymousUser", error.name, error.message);
+    }
+   
   }
 
   // -------------------
@@ -97,6 +108,7 @@ export class CognitoService {
       );
       return true;
     } catch (err: any) {
+      console.error("userExists", err.name, err.message);
       if (err.name === "UserNotFoundException") return false;
       throw err;
     }
@@ -131,6 +143,7 @@ export class CognitoService {
 
       return { success: false, message: "Ocorreu um erro ao fazer login." };
     } catch (err: any) {
+      console.error("Erro dentro do CognitoService:", err.name, err.message);
       if (err.name === "UserNotConfirmedException") {
         return { success: false, message: "Usuário não confirmado." };
       }
