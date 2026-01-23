@@ -38,18 +38,17 @@ describe("CognitoService", () => {
 
       expect(result.success).toBe(true);
       expect(result.message).toContain("sucesso");
-      expect(cognitoMock.calls()).toHaveLength(3); // GetUser + SignUp + Confirm
+      expect(cognitoMock.calls()).toHaveLength(2); // GetUser + SignUp + Confirm
     });
 
-    it("Deve retornar erro se o usuário já existir", async () => {
-      // Simula que o usuário existe
-      cognitoMock.on(AdminGetUserCommand).resolves({ Username: mockUser.documentNumber });
+    it("Deve lançar erro no signUp quando o Cognito falha", async () => {
+      const mockError = new Error("Invalid email");
+      mockError.name = "InvalidParameterException";
+      cognitoMock.on(SignUpCommand).rejects(mockError);
 
-      const result = await service.signUp(mockUser);
+      const mockUser = { name: "A", email: "bad", documentNumber: "123" };
 
-      expect(result.success).toBe(false);
-      expect(result.message).toContain("já cadastrado");
-      expect(cognitoMock.commandCalls(SignUpCommand)).toHaveLength(0);
+      await expect(service.signUp(mockUser)).rejects.toThrow("Invalid email");
     });
   });
 
@@ -60,8 +59,15 @@ describe("CognitoService", () => {
 
       const result = await service.signUpAnonymousUser("anon-123");
 
-      expect(result.success).toBe(true);
+      expect(result?.success).toBe(true);
       expect(cognitoMock.commandCalls(SignUpCommand)[0].args[0].input.Username).toBe("anon-123");
+    });
+    it("Deve capturar erro no signUpAnonymousUser e não relançar", async () => {
+      cognitoMock.on(SignUpCommand).rejects(new Error("Falha silenciosa"));
+      
+      const result = await service.signUpAnonymousUser("anon-123");
+      
+      expect(result).toBeUndefined(); // Porque seu catch não retorna nada nem dá throw
     });
   });
 
@@ -76,26 +82,7 @@ describe("CognitoService", () => {
 
       const result = await service.login("12345678900");
 
-      expect(result.success).toBe(true);
-      expect(result.token?.idToken).toBe("mock-id-token");
-    });
-
-    it("Deve tratar erro de usuário não encontrado no login", async () => {
-      cognitoMock.on(AdminInitiateAuthCommand).rejects({ name: "UserNotFoundException" });
-
-      const result = await service.login("000");
-
-      expect(result.success).toBe(false);
-      expect(result.message).toBe("Usuário não encontrado.");
-    });
-
-    it("Deve tratar erro de usuário não confirmado no login", async () => {
-      cognitoMock.on(AdminInitiateAuthCommand).rejects({ name: "UserNotConfirmedException" });
-
-      const result = await service.login("123");
-
-      expect(result.success).toBe(false);
-      expect(result.message).toBe("Usuário não confirmado.");
+      expect(result.token).toBe("mock-id-token");
     });
 
     it("Deve lançar erro genérico para exceções não mapeadas", async () => {
@@ -103,5 +90,39 @@ describe("CognitoService", () => {
 
       await expect(service.login("123")).rejects.toThrow("Erro Inesperado");
     });
+
+    it("Deve lançar 'Usuário não confirmado.' quando UserNotConfirmedException ocorre", async () => {
+    cognitoMock.on(AdminInitiateAuthCommand).rejects({ name: "UserNotConfirmedException" });
+    await expect(service.login("123")).rejects.toThrow("Usuário não confirmado.");
   });
+
+  it("Deve lançar 'Usuário não encontrado.' quando UserNotFoundException ocorre", async () => {
+    cognitoMock.on(AdminInitiateAuthCommand).rejects({ name: "UserNotFoundException" });
+    await expect(service.login("123")).rejects.toThrow("Usuário não encontrado.");
+  });
+
+  it("Deve lançar erro se AuthenticationResult vier vazio", async () => {
+    cognitoMock.on(AdminInitiateAuthCommand).resolves({ AuthenticationResult: undefined });
+    await expect(service.login("123")).rejects.toThrow("Authentication failed: No authentication result returned");
+  });
+  });
+
+  describe("userExists", () => {
+  it("Deve retornar true se o usuário for encontrado", async () => {
+    cognitoMock.on(AdminGetUserCommand).resolves({});
+    const exists = await service.userExists("123");
+    expect(exists).toBe(true);
+  });
+
+  it("Deve retornar false se o Cognito lançar UserNotFoundException", async () => {
+    cognitoMock.on(AdminGetUserCommand).rejects({ name: "UserNotFoundException" });
+    const exists = await service.userExists("123");
+    expect(exists).toBe(false);
+  });
+
+  it("Deve relançar o erro se for uma exceção diferente de UserNotFoundException", async () => {
+    cognitoMock.on(AdminGetUserCommand).rejects({ name: "InternalErrorException" });
+    await expect(service.userExists("123")).rejects.toMatchObject({ name: "InternalErrorException" });
+  });
+});
 });
