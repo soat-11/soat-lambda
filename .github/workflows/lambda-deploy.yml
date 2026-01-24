@@ -39,10 +39,9 @@ jobs:
       - name: Configurar Credenciais da AWS (Via Secrets)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ env.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: UPLOAD para o S3 (Artifact Store)
         run: aws s3 cp ${{ env.ZIP_FILE_NAME }} s3://${{ env.S3_BUCKET_NAME }}/${{ env.ZIP_FILE_NAME }}
