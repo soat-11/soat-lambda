@@ -30,19 +30,20 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Instalar Dependências (Opcional | Mantenha ou remova, dependendo de onde o npm install está no projeto)
-        run: npm install
+      - name: Instalar Dependências
+        run: npm install --omit=dev
 
       - name: BUILD | Criar o Pacote de Implantação (.zip)
-        run: zip -r ${{ env.ZIP_FILE_NAME }} .
+        run: |
+          npm prune --production
+          zip -r ${{ env.ZIP_FILE_NAME }} . -x "*.git*" "*test*" "README.md"
 
       - name: Configurar Credenciais da AWS (Via Secrets)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ env.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: UPLOAD para o S3 (Artifact Store)
         run: aws s3 cp ${{ env.ZIP_FILE_NAME }} s3://${{ env.S3_BUCKET_NAME }}/${{ env.ZIP_FILE_NAME }}
@@ -54,13 +55,16 @@ jobs:
       - name: Configurar Credenciais da AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ env.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: DEPLOY | Atualizar Função Signup
-        run: aws lambda update-function-code --function-name ${{ env.PROJECT }}-signup --s3-bucket ${{ env.S3_BUCKET_NAME }} --s3-key ${{ env.ZIP_FILE_NAME }}
+      - name: DEPLOY | Atualizar Função Signup and Login
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{ env.PROJECT }}-signup-and-login \
+            --s3-bucket ${{ env.S3_BUCKET_NAME }} \
+            --s3-key ${{ env.ZIP_FILE_NAME }}
 
   deploy_login:
     runs-on: ubuntu-latest
@@ -69,10 +73,14 @@ jobs:
       - name: Configurar Credenciais da AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ env.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: DEPLOY | Atualizar Função Login
-        run: aws lambda update-function-code --function-name ${{ env.PROJECT }}-login --s3-bucket ${{ env.S3_BUCKET_NAME }} --s3-key ${{ env.ZIP_FILE_NAME }}
+      - name: DEPLOY | Atualizar Função Anonymous Login
+
+        run: |
+          aws lambda update-function-code \
+            --function-name ${{ env.PROJECT }}-anonymous-login \
+            --s3-bucket ${{ env.S3_BUCKET_NAME }} \
+            --s3-key ${{ env.ZIP_FILE_NAME }}
