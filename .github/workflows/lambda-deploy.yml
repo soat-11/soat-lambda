@@ -53,10 +53,9 @@ jobs:
       - name: Configurar Credenciais da AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ env.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: DEPLOY | Atualizar Função Signup
         run: aws lambda update-function-code --function-name ${{ env.PROJECT }}-signup --s3-bucket ${{ env.S3_BUCKET_NAME }} --s3-key ${{ env.ZIP_FILE_NAME }}
@@ -68,10 +67,9 @@ jobs:
       - name: Configurar Credenciais da AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ env.AWS_REGION }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
       - name: DEPLOY | Atualizar Função Login
         run: aws lambda update-function-code --function-name ${{ env.PROJECT }}-login --s3-bucket ${{ env.S3_BUCKET_NAME }} --s3-key ${{ env.ZIP_FILE_NAME }}
