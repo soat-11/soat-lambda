@@ -18,17 +18,14 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
 
-
     // 2. Autentica para gerar o JWT
     const authResult = await service.login(anonymousId);
 
     return {
       statusCode: 200,
-      body: JSON.stringify({
-        message: "Logado como visitante",
-         token: authResult.token?.idToken, // Esse token vai no Header Authorization
-        user_id: authResult.token?.accessToken
-      }),
+      body: JSON.stringify(
+        authResult
+      ),
     };
   } catch (error: any) {
     console.error("Erro no login anônimo:", error.message, error.name);

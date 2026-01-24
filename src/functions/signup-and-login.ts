@@ -10,6 +10,18 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     const { region, userPoolId, appClientId } = await getCognitoConfig();
     const service = new CognitoService(region, userPoolId, appClientId);
 
+    const userExists = await service.userExists(cpf);
+    if(userExists) {
+      const authResult = await service.login(cpf);
+
+      return {
+      statusCode: 200,
+      body: JSON.stringify(
+       authResult,
+      ),
+    };
+    }
+
     // 1. Criar o usuário no Cognito
     const result = await service.signUp({ name, email, documentNumber: cpf });
     if (!result.success) {
@@ -21,11 +33,9 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     return {
       statusCode: 201,
-      body: JSON.stringify({
-        message: "Usuário criado e logado",
-        token: authResult.token?.idToken, // Esse token vai no Header Authorization
-        user_id: authResult.token?.accessToken
-      }),
+      body: JSON.stringify(
+        authResult,
+      ),
     };
   } catch (error: any) {
     return { statusCode: 400, body: JSON.stringify({ message: error.message, error: error.message }) };

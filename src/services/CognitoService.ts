@@ -5,7 +5,6 @@ import {
   AdminGetUserCommand,
   AdminInitiateAuthCommand,
 } from "@aws-sdk/client-cognito-identity-provider";
-import { randomUUID } from "node:crypto";
 
 const passwordDefault = "SoatChallenge#01";
 
@@ -14,12 +13,6 @@ interface UsuarioDto {
   email: string;
   documentNumber: string;
 }
-
-interface TokenDto {
-  idToken: string;
-  accessToken: string;
-}
-
 export class CognitoService {
   private client: CognitoIdentityProviderClient;
   private userPoolId: string;
@@ -36,11 +29,6 @@ export class CognitoService {
   // -------------------
   async signUp(user: UsuarioDto) {
     try {
-      const exists = await this.userExists(user.documentNumber);
-    if (exists) {
-      return { success: false, message: "Usuário já cadastrado. Por favor, tente autenticar." };
-    }
-    
     await this.client.send(
       new SignUpCommand({
         ClientId: this.clientId,
@@ -89,7 +77,7 @@ export class CognitoService {
     );
 
     return { success: true, message: "Usuário anonimo cadastrado com sucesso" };
-    } catch (error) { 
+    } catch (error: any) { 
       console.error("signUpAnonymousUser", error.name, error.message);
     }
    
@@ -98,7 +86,7 @@ export class CognitoService {
   // -------------------
   // Verifica se usuário já existe
   // -------------------
-  private async userExists(documentNumber: string): Promise<boolean> {
+  async userExists(documentNumber: string): Promise<boolean> {
     try {
       await this.client.send(
         new AdminGetUserCommand({
@@ -117,7 +105,7 @@ export class CognitoService {
   // -------------------
   // Login
   // -------------------
-  async login(documentNumber: string): Promise<{ success: boolean; token?: TokenDto; message?: string }> {
+  async login(documentNumber: string): Promise<{ token: string }> {
     try {
       const authResponse = await this.client.send(
         new AdminInitiateAuthCommand({
@@ -131,24 +119,21 @@ export class CognitoService {
         })
       );
 
-      if (authResponse.AuthenticationResult) {
-        return {
-          success: true,
-          token: {
-            idToken: authResponse.AuthenticationResult.IdToken!,
-            accessToken: authResponse.AuthenticationResult.AccessToken!,
-          },
-        };
+      if (!authResponse.AuthenticationResult) {
+        throw new Error("Authentication failed: No authentication result returned");
       }
 
-      return { success: false, message: "Ocorreu um erro ao fazer login." };
+      return {
+        token: authResponse.AuthenticationResult.IdToken as string,
+      }
+      
     } catch (err: any) {
       console.error("Erro dentro do CognitoService:", err.name, err.message);
       if (err.name === "UserNotConfirmedException") {
-        return { success: false, message: "Usuário não confirmado." };
+        throw new Error("Usuário não confirmado.");
       }
       if (err.name === "UserNotFoundException") {
-        return { success: false, message: "Usuário não encontrado." };
+        throw new Error("Usuário não encontrado.");
       }
       throw err;
     }

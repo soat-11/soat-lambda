@@ -1,9 +1,8 @@
-import { handler } from "../signup-and-login"; // ajuste o caminho
+import { handler } from "../signup-and-login";
 import { CognitoService } from "../../services/CognitoService";
 import { getCognitoConfig } from "../../utils/get-cognito-config";
 import { APIGatewayProxyEvent, Context } from "aws-lambda";
 
-// Mock das dependências
 jest.mock("../../utils/get-cognito-config");
 jest.mock("../../services/CognitoService");
 
@@ -20,7 +19,6 @@ describe("Lambda: signup-and-login", () => {
   });
 
   it("Deve cadastrar e logar um novo usuário com sucesso (Caminho Feliz)", async () => {
-    // GIVEN: Um evento com dados válidos
     const event = {
       body: JSON.stringify({
         name: "Thiago Adriano",
@@ -29,39 +27,66 @@ describe("Lambda: signup-and-login", () => {
       }),
     } as APIGatewayProxyEvent;
 
+    const userExistsMock = jest.fn().mockResolvedValue(false);
     const signUpMock = jest.fn().mockResolvedValue({ success: true });
     const loginMock = jest.fn().mockResolvedValue({
-      success: true,
-      token: { idToken: "jwt-id-token", accessToken: "jwt-access-token" },
+      token: "jwt-access-token",
+      idToken: "jwt-id-token",
     });
 
     (CognitoService as jest.Mock).mockImplementation(() => ({
+      userExists: userExistsMock,
       signUp: signUpMock,
       login: loginMock,
     }));
 
-    // WHEN: A lambda é executada
     const response = await handler(event, mockContext, () => {});
 
-    // THEN: Deve retornar status 201 e os tokens
     expect(response?.statusCode).toBe(201);
     const body = JSON.parse(response?.body || "{}");
-    expect(body.token).toBe("jwt-id-token");
-    
-    // Verifica se o CPF foi limpo antes de enviar ao service
+    expect(body.token).toBe("jwt-access-token");
+    expect(userExistsMock).toHaveBeenCalledWith("12345678900");
     expect(signUpMock).toHaveBeenCalledWith(expect.objectContaining({
       documentNumber: "12345678900"
     }));
   });
 
+  it("Deve retornar 200 e fazer login se usuário já existe", async () => {
+    const event = {
+      body: JSON.stringify({
+        name: "Thiago Adriano",
+        email: "thiago@example.com",
+        documentNumber: "123.456.789-00"
+      }),
+    } as APIGatewayProxyEvent;
+
+    const userExistsMock = jest.fn().mockResolvedValue(true);
+    const loginMock = jest.fn().mockResolvedValue({
+      token: "jwt-access-token",
+    });
+
+    (CognitoService as jest.Mock).mockImplementation(() => ({
+      userExists: userExistsMock,
+      login: loginMock,
+    }));
+
+    const response = await handler(event, mockContext, () => {});
+
+    expect(response?.statusCode).toBe(200);
+    const body = JSON.parse(response?.body || "{}");
+    expect(body.token).toBe("jwt-access-token");
+    expect(userExistsMock).toHaveBeenCalledWith("12345678900");
+    expect(loginMock).toHaveBeenCalled();
+  });
+
   it("Deve retornar erro 400 se o cadastro no Cognito falhar", async () => {
-    // GIVEN: Usuário já existente ou erro de validação do Cognito
     const event = {
       body: JSON.stringify({ name: "T", email: "e@e.com", documentNumber: "123" }),
     } as APIGatewayProxyEvent;
 
     (CognitoService as jest.Mock).mockImplementation(() => ({
-      signUp: jest.fn().mockResolvedValue({ success: false, message: "Usuário já cadastrado" }),
+      userExists: jest.fn().mockResolvedValue(false),
+      signUp: jest.fn().mockRejectedValue(new Error("Usuário já cadastrado")),
       login: jest.fn(),
     }));
 
@@ -80,8 +105,8 @@ describe("Lambda: signup-and-login", () => {
   });
 
   it("Deve retornar erro 400 se o login falhar após um cadastro bem-sucedido", async () => {
-    // Simula cadastro OK, mas login falha (ex: erro inesperado no Cognito)
     (CognitoService as jest.Mock).mockImplementation(() => ({
+      userExists: jest.fn().mockResolvedValue(false),
       signUp: jest.fn().mockResolvedValue({ success: true }),
       login: jest.fn().mockRejectedValue(new Error("Erro interno na autenticação")),
     }));
@@ -97,7 +122,6 @@ describe("Lambda: signup-and-login", () => {
   });
 
   it("Deve lidar com erro se getCognitoConfig falhar", async () => {
-    // Simula falha ao buscar variáveis de ambiente/configurações
     (getCognitoConfig as jest.Mock).mockRejectedValue(new Error("Config Error"));
 
     const event = { body: JSON.stringify({ name: "A", email: "a@a.com", documentNumber: "111" }) } as APIGatewayProxyEvent;

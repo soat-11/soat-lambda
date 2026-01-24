@@ -9,14 +9,14 @@ provider:
   region: us-east-1
 
 functions:
-  signup:
-    handler: dist/functions/anonymous-login.handler
+  anonymous_login:
+    handler: dist/anonymous-login.handler
     events:
       - http:
           path: anonymous-login
           method: post
-  login:
-    handler: dist/functions/signup-and-login.handler
+  signup_and_login:
+    handler: dist/signup-and-login.handler
     events:
       - http:
           path: signup-and-login
